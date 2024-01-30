@@ -97,7 +97,7 @@ mod conv;
 mod device;
 mod queue;
 
-use crate::{CopyExtent, TextureDescriptor};
+use crate::{BufferResource, CopyExtent, Resource, TextureDescriptor};
 
 #[cfg(not(any(windows, webgl)))]
 pub use self::egl::{AdapterContext, AdapterContextLock};
@@ -120,6 +120,7 @@ use glow::HasContext;
 
 use naga::FastHashMap;
 use parking_lot::Mutex;
+use std::any::Any;
 use std::sync::atomic::{AtomicU32, AtomicU8};
 use std::{fmt, ops::Range, sync::Arc};
 
@@ -290,6 +291,15 @@ pub struct Buffer {
     map_flags: u32,
     data: Option<Arc<std::sync::Mutex<Vec<u8>>>>,
 }
+
+impl Resource for Buffer {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl BufferResource for Buffer {}
+
 
 #[cfg(send_sync)]
 unsafe impl Sync for Buffer {}

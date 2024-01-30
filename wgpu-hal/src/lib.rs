@@ -80,12 +80,7 @@ pub mod api {
 }
 
 use std::{
-    borrow::{Borrow, Cow},
-    fmt,
-    num::NonZeroU32,
-    ops::{Range, RangeInclusive},
-    ptr::NonNull,
-    sync::Arc,
+    any::Any, borrow::{Borrow, Cow}, fmt, num::NonZeroU32, ops::{Range, RangeInclusive}, ptr::NonNull, sync::Arc
 };
 
 use bitflags::bitflags;
@@ -109,7 +104,7 @@ pub type MemoryRange = Range<wgt::BufferAddress>;
 pub type FenceValue = u64;
 
 /// Drop guard to signal wgpu-hal is no longer using an externally created object.
-pub type DropGuard = Box<dyn std::any::Any + Send + Sync>;
+pub type DropGuard = Box<dyn Any + Send + Sync>;
 
 #[derive(Clone, Debug, PartialEq, Eq, Error)]
 pub enum DeviceError {
@@ -188,6 +183,16 @@ impl InstanceError {
     }
 }
 
+pub trait Resource: 'static {
+    fn as_any(&self) -> &dyn Any;
+}
+
+pub trait BufferResource: Resource {}
+
+pub fn downcast<T: Resource>(from: &dyn BufferResource) -> &T {
+    from.as_any().downcast_ref().unwrap()
+}
+
 pub trait Api: Clone + fmt::Debug + Sized {
     type Instance: Instance<Self>;
     type Surface: Surface<Self>;
@@ -198,7 +203,7 @@ pub trait Api: Clone + fmt::Debug + Sized {
     type CommandEncoder: CommandEncoder<Self>;
     type CommandBuffer: WasmNotSendSync + fmt::Debug;
 
-    type Buffer: fmt::Debug + WasmNotSendSync + 'static;
+    type Buffer: fmt::Debug + WasmNotSendSync + BufferResource;
     type Texture: fmt::Debug + WasmNotSendSync + 'static;
     type SurfaceTexture: fmt::Debug + WasmNotSendSync + Borrow<Self::Texture>;
     type TextureView: fmt::Debug + WasmNotSendSync;
@@ -304,14 +309,14 @@ pub trait Device<A: Api>: WasmNotSendSync {
     //TODO: clarify if zero-sized mapping is allowed
     unsafe fn map_buffer(
         &self,
-        buffer: &A::Buffer,
+        buffer: &dyn BufferResource,
         range: MemoryRange,
     ) -> Result<BufferMapping, DeviceError>;
-    unsafe fn unmap_buffer(&self, buffer: &A::Buffer) -> Result<(), DeviceError>;
-    unsafe fn flush_mapped_ranges<I>(&self, buffer: &A::Buffer, ranges: I)
+    unsafe fn unmap_buffer(&self, buffer: &dyn BufferResource) -> Result<(), DeviceError>;
+    unsafe fn flush_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I)
     where
         I: Iterator<Item = MemoryRange>;
-    unsafe fn invalidate_mapped_ranges<I>(&self, buffer: &A::Buffer, ranges: I)
+    unsafe fn invalidate_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I)
     where
         I: Iterator<Item = MemoryRange>;
 
@@ -456,9 +461,9 @@ pub trait CommandEncoder<A: Api>: WasmNotSendSync + fmt::Debug {
 
     // copy operations
 
-    unsafe fn clear_buffer(&mut self, buffer: &A::Buffer, range: MemoryRange);
+    unsafe fn clear_buffer(&mut self, buffer: &dyn BufferResource, range: MemoryRange);
 
-    unsafe fn copy_buffer_to_buffer<T>(&mut self, src: &A::Buffer, dst: &A::Buffer, regions: T)
+    unsafe fn copy_buffer_to_buffer<T>(&mut self, src: &dyn BufferResource, dst: &dyn BufferResource, regions: T)
     where
         T: Iterator<Item = BufferCopy>;
 

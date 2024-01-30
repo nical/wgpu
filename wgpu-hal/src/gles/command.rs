@@ -1,3 +1,5 @@
+use crate::{downcast, BufferResource};
+
 use super::{conv, Command as C};
 use arrayvec::ArrayVec;
 use std::{mem, ops::Range};
@@ -317,7 +319,9 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
         }
     }
 
-    unsafe fn clear_buffer(&mut self, buffer: &super::Buffer, range: crate::MemoryRange) {
+    unsafe fn clear_buffer(&mut self, buffer: &dyn BufferResource, range: crate::MemoryRange) {
+        let buffer: &super::Buffer = downcast(buffer);
+
         self.cmd_buffer.commands.push(C::ClearBuffer {
             dst: buffer.clone(),
             dst_target: buffer.target,
@@ -327,12 +331,15 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
 
     unsafe fn copy_buffer_to_buffer<T>(
         &mut self,
-        src: &super::Buffer,
-        dst: &super::Buffer,
+        src: &dyn BufferResource,
+        dst: &dyn BufferResource,
         regions: T,
     ) where
         T: Iterator<Item = crate::BufferCopy>,
     {
+        let src: &super::Buffer = downcast(src);
+        let dst: &super::Buffer = downcast(dst);
+
         let (src_target, dst_target) = if src.target == dst.target {
             (glow::COPY_READ_BUFFER, glow::COPY_WRITE_BUFFER)
         } else {

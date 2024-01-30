@@ -1,5 +1,5 @@
 use super::{conv, PrivateCapabilities};
-use crate::auxil::map_naga_stage;
+use crate::{auxil::map_naga_stage, downcast, BufferResource};
 use glow::HasContext;
 use std::{
     cmp::max,
@@ -626,9 +626,11 @@ impl crate::Device<super::Api> for super::Device {
 
     unsafe fn map_buffer(
         &self,
-        buffer: &super::Buffer,
+        buffer: &dyn BufferResource,
         range: crate::MemoryRange,
     ) -> Result<crate::BufferMapping, crate::DeviceError> {
+        let buffer: &super::Buffer = downcast(buffer);
+
         let is_coherent = buffer.map_flags & glow::MAP_COHERENT_BIT != 0;
         let ptr = match buffer.raw {
             None => {
@@ -663,7 +665,9 @@ impl crate::Device<super::Api> for super::Device {
             is_coherent,
         })
     }
-    unsafe fn unmap_buffer(&self, buffer: &super::Buffer) -> Result<(), crate::DeviceError> {
+    unsafe fn unmap_buffer(&self, buffer: &dyn BufferResource) -> Result<(), crate::DeviceError> {
+        let buffer: &super::Buffer = downcast(buffer);
+
         if let Some(raw) = buffer.raw {
             if buffer.data.is_none() {
                 let gl = &self.shared.context.lock();
@@ -674,10 +678,12 @@ impl crate::Device<super::Api> for super::Device {
         }
         Ok(())
     }
-    unsafe fn flush_mapped_ranges<I>(&self, buffer: &super::Buffer, ranges: I)
+    unsafe fn flush_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I)
     where
         I: Iterator<Item = crate::MemoryRange>,
     {
+        let buffer: &super::Buffer = downcast(buffer);
+
         if let Some(raw) = buffer.raw {
             let gl = &self.shared.context.lock();
             unsafe { gl.bind_buffer(buffer.target, Some(raw)) };
@@ -692,7 +698,7 @@ impl crate::Device<super::Api> for super::Device {
             }
         }
     }
-    unsafe fn invalidate_mapped_ranges<I>(&self, _buffer: &super::Buffer, _ranges: I) {
+    unsafe fn invalidate_mapped_ranges<I>(&self, _buffer: &dyn BufferResource, _ranges: I) {
         //TODO: do we need to do anything?
     }
 

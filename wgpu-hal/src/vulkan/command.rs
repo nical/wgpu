@@ -1,3 +1,5 @@
+use crate::{downcast, BufferResource};
+
 use super::conv;
 
 use arrayvec::ArrayVec;
@@ -211,7 +213,9 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
         }
     }
 
-    unsafe fn clear_buffer(&mut self, buffer: &super::Buffer, range: crate::MemoryRange) {
+    unsafe fn clear_buffer(&mut self, buffer: &dyn BufferResource, range: crate::MemoryRange) {
+        let buffer: &super::Buffer = downcast(buffer);
+
         let range_size = range.end - range.start;
         if self.device.workarounds.contains(
             super::Workarounds::FORCE_FILL_BUFFER_WITH_SIZE_GREATER_4096_ALIGNED_OFFSET_16,
@@ -254,12 +258,15 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
 
     unsafe fn copy_buffer_to_buffer<T>(
         &mut self,
-        src: &super::Buffer,
-        dst: &super::Buffer,
+        src: &dyn BufferResource,
+        dst: &dyn BufferResource,
         regions: T,
     ) where
         T: Iterator<Item = crate::BufferCopy>,
     {
+        let src: &super::Buffer = downcast(src);
+        let dst: &super::Buffer = downcast(dst);
+
         let vk_regions_iter = regions.map(|r| vk::BufferCopy {
             src_offset: r.src_offset,
             dst_offset: r.dst_offset,

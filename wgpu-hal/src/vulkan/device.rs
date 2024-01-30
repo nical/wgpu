@@ -1,3 +1,5 @@
+use crate::{downcast, BufferResource};
+
 use super::conv;
 
 use arrayvec::ArrayVec;
@@ -927,9 +929,11 @@ impl crate::Device<super::Api> for super::Device {
 
     unsafe fn map_buffer(
         &self,
-        buffer: &super::Buffer,
+        buffer: &dyn BufferResource,
         range: crate::MemoryRange,
     ) -> Result<crate::BufferMapping, crate::DeviceError> {
+        let buffer: &super::Buffer = downcast(buffer);
+
         if let Some(ref block) = buffer.block {
             let size = range.end - range.start;
             let mut block = block.lock();
@@ -942,7 +946,9 @@ impl crate::Device<super::Api> for super::Device {
             Err(crate::DeviceError::OutOfMemory)
         }
     }
-    unsafe fn unmap_buffer(&self, buffer: &super::Buffer) -> Result<(), crate::DeviceError> {
+    unsafe fn unmap_buffer(&self, buffer: &dyn BufferResource) -> Result<(), crate::DeviceError> {
+        let buffer: &super::Buffer = downcast(buffer);
+
         if let Some(ref block) = buffer.block {
             unsafe { block.lock().unmap(&*self.shared) };
             Ok(())
@@ -951,10 +957,11 @@ impl crate::Device<super::Api> for super::Device {
         }
     }
 
-    unsafe fn flush_mapped_ranges<I>(&self, buffer: &super::Buffer, ranges: I)
+    unsafe fn flush_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I)
     where
         I: Iterator<Item = crate::MemoryRange>,
     {
+        let buffer: &super::Buffer = downcast(buffer);
         if let Some(vk_ranges) = self.shared.make_memory_ranges(buffer, ranges) {
             unsafe {
                 self.shared
@@ -966,10 +973,11 @@ impl crate::Device<super::Api> for super::Device {
             .unwrap();
         }
     }
-    unsafe fn invalidate_mapped_ranges<I>(&self, buffer: &super::Buffer, ranges: I)
+    unsafe fn invalidate_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I)
     where
         I: Iterator<Item = crate::MemoryRange>,
     {
+        let buffer: &super::Buffer = downcast(buffer);
         if let Some(vk_ranges) = self.shared.make_memory_ranges(buffer, ranges) {
             unsafe {
                 self.shared

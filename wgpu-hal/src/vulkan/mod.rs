@@ -32,14 +32,10 @@ mod device;
 mod instance;
 
 use std::{
-    borrow::Borrow,
-    ffi::CStr,
-    fmt,
-    num::NonZeroU32,
-    sync::{
+    any::Any, borrow::Borrow, ffi::CStr, fmt, num::NonZeroU32, sync::{
         atomic::{AtomicIsize, Ordering},
         Arc,
-    },
+    }
 };
 
 use arrayvec::ArrayVec;
@@ -48,6 +44,8 @@ use ash::{
     vk,
 };
 use parking_lot::{Mutex, RwLock};
+
+use crate::{BufferResource, Resource};
 
 const MILLIS_TO_NANOS: u64 = 1_000_000;
 const MAX_TOTAL_ATTACHMENTS: usize = crate::MAX_COLOR_ATTACHMENTS * 2 + 1;
@@ -369,6 +367,12 @@ pub struct Buffer {
     raw: vk::Buffer,
     block: Option<Mutex<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>,
 }
+
+impl Resource for Buffer {
+    fn as_any(&self) -> &dyn Any { self }
+}
+
+impl BufferResource for Buffer {}
 
 #[derive(Debug)]
 pub struct AccelerationStructure {

@@ -2,6 +2,8 @@
 
 use std::ops::Range;
 
+use crate::BufferResource;
+
 #[derive(Clone, Debug)]
 pub struct Api;
 pub struct Context;
@@ -9,6 +11,13 @@ pub struct Context;
 pub struct Encoder;
 #[derive(Debug)]
 pub struct Resource;
+
+impl super::Resource for Resource {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+impl BufferResource for Resource {}
 
 type DeviceResult<T> = Result<T, crate::DeviceError>;
 
@@ -130,16 +139,16 @@ impl crate::Device<Api> for Context {
     unsafe fn destroy_buffer(&self, buffer: Resource) {}
     unsafe fn map_buffer(
         &self,
-        buffer: &Resource,
+        buffer: &dyn BufferResource,
         range: crate::MemoryRange,
     ) -> DeviceResult<crate::BufferMapping> {
         Err(crate::DeviceError::Lost)
     }
-    unsafe fn unmap_buffer(&self, buffer: &Resource) -> DeviceResult<()> {
+    unsafe fn unmap_buffer(&self, buffer: &dyn BufferResource) -> DeviceResult<()> {
         Ok(())
     }
-    unsafe fn flush_mapped_ranges<I>(&self, buffer: &Resource, ranges: I) {}
-    unsafe fn invalidate_mapped_ranges<I>(&self, buffer: &Resource, ranges: I) {}
+    unsafe fn flush_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I) {}
+    unsafe fn invalidate_mapped_ranges<I>(&self, buffer: &dyn BufferResource, ranges: I) {}
 
     unsafe fn create_texture(&self, desc: &crate::TextureDescriptor) -> DeviceResult<Resource> {
         Ok(Resource)
@@ -281,9 +290,9 @@ impl crate::CommandEncoder<Api> for Encoder {
     {
     }
 
-    unsafe fn clear_buffer(&mut self, buffer: &Resource, range: crate::MemoryRange) {}
+    unsafe fn clear_buffer(&mut self, buffer: &dyn BufferResource, range: crate::MemoryRange) {}
 
-    unsafe fn copy_buffer_to_buffer<T>(&mut self, src: &Resource, dst: &Resource, regions: T) {}
+    unsafe fn copy_buffer_to_buffer<T>(&mut self, src: &dyn BufferResource, dst: &dyn BufferResource, regions: T) {}
 
     #[cfg(webgl)]
     unsafe fn copy_external_image_to_texture<T>(
