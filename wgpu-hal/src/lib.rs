@@ -80,12 +80,7 @@ pub mod api {
 }
 
 use std::{
-    borrow::{Borrow, Cow},
-    fmt,
-    num::NonZeroU32,
-    ops::{Range, RangeInclusive},
-    ptr::NonNull,
-    sync::Arc,
+    any::Any, borrow::{Borrow, Cow}, fmt, num::NonZeroU32, ops::{Range, RangeInclusive}, ptr::NonNull, sync::Arc
 };
 
 use bitflags::bitflags;
@@ -293,7 +288,9 @@ pub trait Adapter<A: Api>: WasmNotSendSync {
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp;
 }
 
-pub trait Device<A: Api>: WasmNotSendSync {
+pub trait Device: WasmNotSendSync {
+    type Api: Api;
+
     /// Exit connection to this logical device.
     unsafe fn exit(self, queue: A::Queue);
     /// Creates a new buffer.
@@ -304,7 +301,7 @@ pub trait Device<A: Api>: WasmNotSendSync {
     //TODO: clarify if zero-sized mapping is allowed
     unsafe fn map_buffer(
         &self,
-        buffer: &A::Buffer,
+        buffer: &Self::Api::Buffer,
         range: MemoryRange,
     ) -> Result<BufferMapping, DeviceError>;
     unsafe fn unmap_buffer(&self, buffer: &A::Buffer) -> Result<(), DeviceError>;
@@ -1607,4 +1604,85 @@ bitflags::bitflags! {
 #[derive(Debug, Clone)]
 pub struct AccelerationStructureBarrier {
     pub usage: Range<AccelerationStructureUses>,
+}
+
+pub trait Resource: WasmNotSendSync + 'static {
+    fn as_any(&self) -> &dyn Any;
+}
+
+pub trait DynInstance: Resource {}
+pub trait DynQueue: Resource {}
+pub trait DynAdapater: Resource {}
+pub trait DynSurface: Resource {}
+pub trait DynCommandEncoder: Resource {}
+pub trait DynBuffer: Resource {}
+pub trait DynTexture: Resource {}
+pub trait DynTextureView: Resource {}
+pub trait DynSurfaceTexture: Resource {}
+pub trait DynBindGroup: Resource {}
+pub trait DynBindGroupLayout: Resource {}
+pub trait DynPipelineLayout: Resource {}
+pub trait DynShaderModule: Resource {}
+pub trait DynRenderPipeline: Resource {}
+pub trait DynComputePipeline: Resource {}
+pub trait DynCommandBuffer: Resource {}
+pub trait DynSampler: Resource {}
+pub trait DynQuerySet: Resource {}
+pub trait DynFence: Resource {}
+pub trait DynAccelerationStructure: Resource {}
+
+pub fn downcast<T: Resource>(res: &dyn Resource) -> &T {
+    res.as_any().downcast_ref().unwrap()
+}
+
+pub trait DynDevice: Resource {
+    unsafe fn map_buffer(
+        &self,
+        buffer: &dyn DynBuffer,
+        range: MemoryRange,
+    ) -> Result<BufferMapping, DeviceError>;
+    unsafe fn unmap_buffer(&self, buffer: &dyn DynBuffer) -> Result<(), DeviceError>;
+    unsafe fn flush_mapped_ranges(&self, buffer: &dyn DynBuffer, ranges: &[MemoryRange]);
+    unsafe fn invalidate_mapped_ranges(&self, buffer: &dyn DynBuffer, ranges: &[MemoryRange]);
+    unsafe fn start_capture(&self) -> bool;
+    unsafe fn stop_capture(&self);
+    unsafe fn get_fence_value(&self, fence: &dyn DynFence) -> Result<FenceValue, DeviceError>;
+    unsafe fn wait(&self, fence: &dyn DynFence, value: FenceValue, timeout_ms: u32) -> Result<bool, DeviceError>;
+}
+
+impl<T: Device> DynDevice for T {
+    unsafe fn map_buffer(
+        &self,
+        buffer: &dyn DynBuffer,
+        range: MemoryRange,
+    ) -> Result<BufferMapping, DeviceError> {
+        let buffer: &A::Buffer = downcast(buffer);
+        self.map_buffer(buffer, range)
+    }
+    unsafe fn unmap_buffer(&self, buffer: &dyn DynBuffer) -> Result<(), DeviceError> {
+        let buffer: &A::Buffer = downcast(buffer);
+        self.unmap_buffer(buffer)
+    }
+    unsafe fn flush_mapped_ranges(&self, buffer: &dyn DynBuffer, ranges: &[MemoryRange]) {
+        let buffer: &A::Buffer = downcast(buffer);
+        self.flush_mapped_ranges(buffer, ranges.iter().cloned())
+    }
+    unsafe fn invalidate_mapped_ranges(&self, buffer: &dyn DynBuffer, ranges: &[MemoryRange]) {
+        let buffer: &A::Buffer = downcast(buffer);
+        self.invalidate_mapped_ranges(buffer, ranges.iter().cloned())
+    }
+    unsafe fn start_capture(&self) -> bool {
+        self.start_capture()
+    }
+    unsafe fn stop_capture(&self) {
+        self.start_capture()
+    }
+    unsafe fn get_fence_value(&self, fence: &dyn DynFence) -> Result<FenceValue, DeviceError> {
+        let fence: &A::Fence = downcast(fence);
+        self.get_fence_value(fence)
+    }
+    unsafe fn wait(&self, fence: &dyn DynFence, value: FenceValue, timeout_ms: u32) -> Result<bool, DeviceError> {
+        let fence: &A::Fence = downcast(fence);
+        self.wait(fence, value, timeout_ms)
+    }
 }
