@@ -429,7 +429,7 @@ impl super::Device {
                             name,
                             index
                         );
-                        return Err(crate::DeviceError::Lost.into());
+                        return Err(crate::DeviceError::Unknown.into());
                     }
                     super::BindingRegister::Textures | super::BindingRegister::Images => {
                         let location = unsafe { gl.get_uniform_location(program, name) };
@@ -659,7 +659,7 @@ impl crate::Device<super::Api> for super::Device {
             }
         };
         Ok(crate::BufferMapping {
-            ptr: ptr::NonNull::new(ptr).ok_or(crate::DeviceError::Lost)?,
+            ptr: ptr::NonNull::new(ptr).ok_or(crate::DeviceError::Unknown)?,
             is_coherent,
         })
     }
@@ -1453,7 +1453,8 @@ impl crate::Device<super::Api> for super::Device {
                     }
                     glow::TIMEOUT_EXPIRED => Ok(false),
                     glow::CONDITION_SATISFIED | glow::ALREADY_SIGNALED => Ok(true),
-                    _ => Err(crate::DeviceError::Lost),
+                    glow::CONTEXT_LOST => Err(crate::DeviceError::Lost),
+                    _ => Err(crate::DeviceError::Unknown),
                 };
             }
         }

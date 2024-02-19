@@ -1185,7 +1185,7 @@ impl crate::Device<super::Api> for super::Device {
             Some(&(_, ref cmd_buf)) => cmd_buf,
             None => {
                 log::error!("No active command buffers for fence value {}", wait_value);
-                return Err(crate::DeviceError::Lost);
+                return Err(crate::DeviceError::Unknown);
             }
         };
 

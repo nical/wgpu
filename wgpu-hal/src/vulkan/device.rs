@@ -2056,7 +2056,7 @@ impl crate::Device<super::Api> for super::Device {
                         }
                         None => {
                             log::error!("No signals reached value {}", wait_value);
-                            Err(crate::DeviceError::Lost)
+                            Err(crate::DeviceError::Unknown)
                         }
                     }
                 }
@@ -2327,7 +2327,7 @@ impl From<gpu_alloc::AllocationError> for crate::DeviceError {
             Ae::OutOfDeviceMemory | Ae::OutOfHostMemory => Self::OutOfMemory,
             _ => {
                 log::error!("memory allocation: {:?}", error);
-                Self::Lost
+                Self::ResourceCreationFailed
             }
         }
     }
@@ -2339,7 +2339,7 @@ impl From<gpu_alloc::MapError> for crate::DeviceError {
             Me::OutOfDeviceMemory | Me::OutOfHostMemory => Self::OutOfMemory,
             _ => {
                 log::error!("memory mapping: {:?}", error);
-                Self::Lost
+                Self::Unknown
             }
         }
     }

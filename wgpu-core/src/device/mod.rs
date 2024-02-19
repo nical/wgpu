@@ -431,6 +431,8 @@ pub enum DeviceError {
     InvalidQueueId,
     #[error("Attempt to use a resource with a different device from the one that created it")]
     WrongDevice,
+    #[error("Internal error")]
+    Unknwon,
 }
 
 impl From<hal::DeviceError> for DeviceError {
@@ -439,6 +441,7 @@ impl From<hal::DeviceError> for DeviceError {
             hal::DeviceError::Lost => DeviceError::Lost,
             hal::DeviceError::OutOfMemory => DeviceError::OutOfMemory,
             hal::DeviceError::ResourceCreationFailed => DeviceError::ResourceCreationFailed,
+            hal::DeviceError::Unknown => DeviceError::Unknwon,
         }
     }
 }

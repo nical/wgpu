@@ -119,6 +119,8 @@ pub enum DeviceError {
     Lost,
     #[error("Creation of a resource failed for a reason other than running out of memory.")]
     ResourceCreationFailed,
+    #[error("Unknown error")]
+    Unknown,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Error)]

@@ -198,26 +198,26 @@ mod placed {
                 gpu_allocator::AllocationError::OutOfMemory => Self::OutOfMemory,
                 gpu_allocator::AllocationError::FailedToMap(e) => {
                     log::error!("DX12 gpu-allocator: Failed to map: {}", e);
-                    Self::Lost
+                    Self::Unknown
                 }
                 gpu_allocator::AllocationError::NoCompatibleMemoryTypeFound => {
                     log::error!("DX12 gpu-allocator: No Compatible Memory Type Found");
-                    Self::Lost
+                    Self::Unknown
                 }
                 gpu_allocator::AllocationError::InvalidAllocationCreateDesc => {
                     log::error!("DX12 gpu-allocator: Invalid Allocation Creation Description");
-                    Self::Lost
+                    Self::Unknown
                 }
                 gpu_allocator::AllocationError::InvalidAllocatorCreateDesc(e) => {
                     log::error!(
                         "DX12 gpu-allocator: Invalid Allocator Creation Description: {}",
                         e
                     );
-                    Self::Lost
+                    Self::Unknown
                 }
                 gpu_allocator::AllocationError::Internal(e) => {
                     log::error!("DX12 gpu-allocator: Internal Error: {}", e);
-                    Self::Lost
+                    Self::Unknown
                 }
                 gpu_allocator::AllocationError::BarrierLayoutNeedsDevice10 => todo!(),
             }

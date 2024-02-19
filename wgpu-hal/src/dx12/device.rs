@@ -194,7 +194,7 @@ impl super::Device {
     pub(super) unsafe fn wait_for_present_queue_idle(&self) -> Result<(), DeviceError> {
         let cur_value = self.idler.fence.get_value();
         if cur_value == !0 {
-            return Err(DeviceError::Lost);
+            return Err(DeviceError::Unknown);
         }
 
         let value = cur_value + 1;
@@ -1027,7 +1027,7 @@ impl crate::Device<super::Api> for super::Device {
             )
             .map_err(|e| {
                 log::error!("Unable to find serialization function: {:?}", e);
-                DeviceError::Lost
+                DeviceError::Unknown
             })?
             .into_device_result("Root signature serialization")?;
 
@@ -1036,7 +1036,7 @@ impl crate::Device<super::Api> for super::Device {
                 "Root signature serialization error: {:?}",
                 unsafe { error.as_c_str() }.to_str().unwrap()
             );
-            return Err(DeviceError::Lost);
+            return Err(DeviceError::Unknown);
         }
 
         let raw = self
@@ -1613,7 +1613,7 @@ impl crate::Device<super::Api> for super::Device {
                 winbase::WAIT_OBJECT_0 => {}
                 winbase::WAIT_ABANDONED | winbase::WAIT_FAILED => {
                     log::error!("Wait failed!");
-                    break Err(DeviceError::Lost);
+                    break Err(DeviceError::Unknown);
                 }
                 winerror::WAIT_TIMEOUT => {
                     log::trace!("Wait timed out!");
@@ -1621,7 +1621,7 @@ impl crate::Device<super::Api> for super::Device {
                 }
                 other => {
                     log::error!("Unexpected wait status: 0x{:x}", other);
-                    break Err(DeviceError::Lost);
+                    break Err(DeviceError::Unknown);
                 }
             };
 

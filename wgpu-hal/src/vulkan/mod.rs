@@ -731,7 +731,7 @@ impl From<vk::Result> for crate::DeviceError {
             vk::Result::ERROR_DEVICE_LOST => Self::Lost,
             _ => {
                 log::warn!("Unrecognized device error {:?}", result);
-                Self::Lost
+                Self::Unknown
             }
         }
     }

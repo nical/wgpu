@@ -1025,6 +1025,16 @@ pub struct Swapchain {
     sample_type: wgt::TextureSampleType,
 }
 
+fn device_error(error: khronos_egl::Error) -> crate::DeviceError {
+    use crate::DeviceError;
+    use khronos_egl::Error;
+    match error {
+        Error::BadAlloc => DeviceError::OutOfMemory,
+        Error::ContextLost => DeviceError::Lost,
+        _ => DeviceError::Unknown,
+    }
+}
+
 #[derive(Debug)]
 pub struct Surface {
     egl: EglContext,
@@ -1091,7 +1101,7 @@ impl Surface {
             .swap_buffers(self.egl.display, sc.surface)
             .map_err(|e| {
                 log::error!("swap_buffers failed: {}", e);
-                crate::SurfaceError::Lost
+                device_error(e)
                 // TODO: should we unset the current context here?
             })?;
         self.egl
@@ -1099,7 +1109,7 @@ impl Surface {
             .make_current(self.egl.display, None, None, None)
             .map_err(|e| {
                 log::error!("make_current(null) failed: {}", e);
-                crate::SurfaceError::Lost
+                device_error(e)
             })?;
 
         Ok(())

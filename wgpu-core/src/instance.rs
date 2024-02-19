@@ -364,7 +364,9 @@ impl<A: HalApi> Adapter<A> {
         .map_err(|err| match err {
             hal::DeviceError::Lost => RequestDeviceError::DeviceLost,
             hal::DeviceError::OutOfMemory => RequestDeviceError::OutOfMemory,
-            hal::DeviceError::ResourceCreationFailed => RequestDeviceError::Internal,
+            hal::DeviceError::ResourceCreationFailed | hal::DeviceError::Unknown => {
+                RequestDeviceError::Internal
+            }
         })?;
 
         self.create_device_and_queue_from_hal(open, desc, instance_flags, trace_path)

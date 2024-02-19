@@ -229,19 +229,19 @@ mod dxc {
                 hassle_rs::HassleError::Win32Error(e) => {
                     // TODO: This returns an HRESULT, should we try and use the associated Windows error message?
                     log::error!("Win32 error: {e:?}");
-                    crate::DeviceError::Lost
+                    crate::DeviceError::Unknown
                 }
                 hassle_rs::HassleError::LoadLibraryError { filename, inner } => {
                     log::error!("Failed to load dxc library {filename:?}. Inner error: {inner:?}");
-                    crate::DeviceError::Lost
+                    crate::DeviceError::Unknown
                 }
                 hassle_rs::HassleError::LibLoadingError(e) => {
                     log::error!("Failed to load dxc library. {e:?}");
-                    crate::DeviceError::Lost
+                    crate::DeviceError::Unknown
                 }
                 hassle_rs::HassleError::WindowsOnly(e) => {
                     log::error!("Signing with dxil.dll is only supported on Windows. {e:?}");
-                    crate::DeviceError::Lost
+                    crate::DeviceError::Unknown
                 }
                 // `ValidationError` and `CompileError` should never happen in a context involving `DeviceError`
                 hassle_rs::HassleError::ValidationError(_e) => unimplemented!(),
